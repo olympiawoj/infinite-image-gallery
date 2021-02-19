@@ -6,18 +6,43 @@ const accessKey = process.env.REACT_APP_UNSPLASH_ACCESS_KEY;
 
 export default function App() {
   const [images, setImages] = useState([]);
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(1);
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
-    getPhotos()
+    getPhotos();
   }, [page]);
 
-  function getPhotos(){
-    fetch(`https://api.unsplash.com/photos?client_id=${accessKey}&page=${page}`)
-    .then((res) => res.json())
-    .then((data => {
-      setImages((images) => [...images, ...data])
-    })); // cleaner than passing data
+  function getPhotos() {
+    let apiUrl = `https://api.unsplash.com/photos?`
+    if(query) apiUrl = `https://api.unsplash.com/search/photos?query=${query}`
+
+    apiUrl += `&page=${page}` 
+    apiUrl += `&client_id=${accessKey}`
+
+    fetch(apiUrl)
+      .then((res) => res.json())
+      .then((data) => {
+        const imagesFromApi = data.results ?? data;
+        // if page is 1, then we need a whole new array of images
+        if(page === 1) setImages(imagesFromApi)
+        // if page > 1, then we are adding for our infinite scroll
+        setImages((images) => [...images, ...imagesFromApi]);
+      })
+  }
+
+  function searchPhotos(e) {
+    e.preventDefault();
+    setPage(1)
+    getPhotos()
+    // fetch(
+    //   `https://api.unsplash.com/search/photos?client_id=${accessKey}&page=${page}&query=${query}`
+    // )
+    //   .then((res) => res.json())
+    //   .then((data) => {
+    //     setImages(data.results);
+    //   })
+    //   .catch(alert); 
   }
 
   // return an error if there is no access key
@@ -33,20 +58,26 @@ export default function App() {
     <div className="app">
       <h1>Unsplash Image Gallery!</h1>
 
-      <form>
-        <input type="text" placeholder="Search Unsplash..." />
+      <form onSubmit={searchPhotos}>
+        <input type="text" placeholder="Search Unsplash..." value={query} onChange={e => setQuery(e.target.value)}/>
         <button>Search</button>
       </form>
 
       <InfiniteScroll
         dataLength={images.length}
-        next={()=>setPage((page) => page + 1)}
+        next={() => setPage((page) => page + 1)}
         hasMore={true}
         loader={<h4>Loading...</h4>}
       >
         <div className="image-grid">
           {images.map((image, index) => (
-            <a className="image" key={index} href={image.links.html} target="_blank" rel="noopener noreferrer">
+            <a
+              className="image"
+              key={index}
+              href={image.links.html}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <img src={image.urls.regular} alt={image.alt_description} />
             </a>
           ))}
