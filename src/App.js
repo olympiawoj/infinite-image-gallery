@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import "./App.css";
 
@@ -8,12 +8,8 @@ export default function App() {
   const [images, setImages] = useState([]);
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('')
-
-  useEffect(() => {
-    getPhotos();
-  }, [page]);
-
-  function getPhotos() {
+  
+  const getPhotos =  useCallback(()=>{
     let apiUrl = `https://api.unsplash.com/photos?`
     if(query) apiUrl = `https://api.unsplash.com/search/photos?query=${query}`
 
@@ -29,20 +25,18 @@ export default function App() {
         // if page > 1, then we are adding for our infinite scroll
         setImages((images) => [...images, ...imagesFromApi]);
       })
-  }
+  }, [page, query])
+
+  useEffect(() => {
+    getPhotos();
+  }, [page, getPhotos]);
+
 
   function searchPhotos(e) {
     e.preventDefault();
     setPage(1)
     getPhotos()
-    // fetch(
-    //   `https://api.unsplash.com/search/photos?client_id=${accessKey}&page=${page}&query=${query}`
-    // )
-    //   .then((res) => res.json())
-    //   .then((data) => {
-    //     setImages(data.results);
-    //   })
-    //   .catch(alert); 
+
   }
 
   // return an error if there is no access key
